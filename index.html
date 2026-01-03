@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إيست كوست - تتبع سيارتك</title>
+    <title>إيست كوست</title>
     
     <link rel="icon" type="image/png" href="https://up6.cc/2026/10/176744974471061.png">
     <link rel="apple-touch-icon" href="https://up6.cc/2026/10/176744974471061.png">
@@ -57,12 +57,35 @@
         }
         .hidden-content { opacity: 0; overflow: hidden; height: 0; }
         .show-content { opacity: 1; height: auto; transition: opacity 1s ease-in; }
+        
+        /* Modal Style for Password */
+        #passwordModal {
+            transition: all 0.3s ease-in-out;
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-4 text-right font-sans">
 
     <div id="splash-screen">
         <img src="https://up6.cc/2026/10/176744974471061.png" alt="إيست كوست">
+    </div>
+
+    <div id="passwordModal" class="fixed inset-0 bg-black/50 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white w-full max-w-xs rounded-2xl p-6 shadow-2xl scale-95 transition-transform duration-300">
+            <div class="text-center mb-4">
+                <div class="bg-orange-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="ph ph-lock-key text-orange-600 text-3xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800">تحقق من الهوية</h3>
+                <p class="text-sm text-gray-500">أدخل كلمة سر السيارة المكونة من 4 أرقام</p>
+            </div>
+            <input id="modalPasswordInput" type="password" maxlength="4" inputmode="numeric" placeholder="****" 
+                   class="w-full text-center tracking-[1em] text-2xl border-2 border-orange-100 rounded-xl p-3 focus:border-orange-500 outline-none mb-4">
+            <div class="flex gap-2">
+                <button onclick="confirmUnlock()" class="flex-1 bg-orange-600 text-white font-bold py-3 rounded-xl hover:bg-orange-700 transition-colors">تأكيد</button>
+                <button onclick="closePasswordModal()" class="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">إلغاء</button>
+            </div>
+        </div>
     </div>
 
     <div id="main-content" class="hidden-content">
@@ -82,15 +105,15 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-bold text-gray-600 mb-1">نوع السيارة</label>
-                            <input id="bookingCarModel" type="text" placeholder="مثلاً: كيا سبورتج" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                            <input id="bookingCarModel" type="text" placeholder="مثلاً: كيا سبورتج" class="w-full border-2 border-orange-50 p-3 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-600 mb-1">التاريخ المطلوب</label>
-                            <input id="bookingDate" type="date" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                            <input id="bookingDate" type="date" class="w-full border-2 border-orange-50 p-3 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
                         </div>
                         <div>
                             <label class="block text-sm font-bold text-gray-600 mb-1">رقم الهاتف</label>
-                            <input id="bookingPhone" type="text" placeholder="09XXXXXXXX" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                            <input id="bookingPhone" type="text" placeholder="09XXXXXXXX" class="w-full border-2 border-orange-50 p-3 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
                         </div>
                         <button onclick="submitBooking()" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl font-bold shadow-md transition-all">إرسال الطلب</button>
                     </div>
@@ -120,6 +143,9 @@
     </div>
 
     <script>
+        let currentKey = '';
+        let currentCorrectPass = '';
+
         window.addEventListener('load', function() {
             setTimeout(function() {
                 const splash = document.getElementById('splash-screen');
@@ -158,7 +184,7 @@
                                     </div>
                                     <span class="text-lg font-bold text-gray-700">${car.number}</span>
                                 </div>
-                                <button onclick="unlockCar('${key}', '${car.passwordCar}')" id="btn-${key}" 
+                                <button onclick="openPasswordModal('${key}', '${car.passwordCar}')" id="btn-${key}" 
                                         class="bg-orange-50 text-orange-600 px-4 py-2 rounded-lg text-sm font-bold border border-orange-200">
                                     عرض التفاصيل
                                 </button>
@@ -177,13 +203,28 @@
             });
         }
 
-        function unlockCar(key, correctPass) {
-            const userPass = prompt("الرجاء إدخال كلمة سر السيارة المكونة من 4 أرقام:");
-            if (userPass === correctPass) {
-                document.getElementById(`details-${key}`).classList.remove("hidden");
-                document.getElementById(`btn-${key}`).classList.add("hidden");
-            } else if (userPass !== null) {
+        // Custom Password Modal Functions
+        function openPasswordModal(key, pass) {
+            currentKey = key;
+            currentCorrectPass = pass;
+            document.getElementById("passwordModal").classList.remove("hidden");
+            document.getElementById("modalPasswordInput").focus();
+        }
+
+        function closePasswordModal() {
+            document.getElementById("passwordModal").classList.add("hidden");
+            document.getElementById("modalPasswordInput").value = "";
+        }
+
+        function confirmUnlock() {
+            const userPass = document.getElementById("modalPasswordInput").value;
+            if (userPass === currentCorrectPass) {
+                document.getElementById(`details-${currentKey}`).classList.remove("hidden");
+                document.getElementById(`btn-${currentKey}`).classList.add("hidden");
+                closePasswordModal();
+            } else {
                 alert("كلمة السر خاطئة!");
+                document.getElementById("modalPasswordInput").value = "";
             }
         }
 
