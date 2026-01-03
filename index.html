@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إيست كوست - تتبع سيارتك</title>
+    
+    <link rel="icon" type="image/png" href="https://up6.cc/2026/10/176744974471061.png">
+    <link rel="apple-touch-icon" href="https://up6.cc/2026/10/176744974471061.png">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="إيست كوست">
+
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIsmM2YrYs9iqINmD2YjYs9iqIiwKICAic2hvcnRfbmFtZSI6ICLYpdmK2LPYqiIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmZmZmZmIiwKICAidGhlbWVfY29sb3IiOiAiI2Y5NzMxNSIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImh0dHBzOi8vdXA2LmNjLzIwMjYvMTAvMTc2NzQ0OTc0NDcxMDYxLnBuZyIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2UvcG5nIgogICAgfQogIF0KfQ==">
+
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
     <script>
@@ -22,7 +32,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        /* شاشة التحميل */
         #splash-screen {
             position: fixed;
             top: 0;
@@ -111,18 +120,14 @@
     </div>
 
     <script>
-        // إخفاء شاشة التحميل بعد 3 ثوانٍ
         window.addEventListener('load', function() {
             setTimeout(function() {
                 const splash = document.getElementById('splash-screen');
                 const main = document.getElementById('main-content');
-                
                 splash.style.opacity = '0';
                 splash.style.visibility = 'hidden';
-                
                 main.classList.remove('hidden-content');
                 main.classList.add('show-content');
-                
                 loadCars();
             }, 3000);
         });
