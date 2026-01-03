@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إيست كوست - تتبع سيارتك</title>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAh1vuaCYYydDPN7-oU5iQOvWnbK5MaNLM",
+            authDomain: "east-cost-ly.firebaseapp.com",
+            databaseURL: "https://east-cost-ly-default-rtdb.firebaseio.com",
+            projectId: "east-cost-ly",
+            storageBucket: "east-cost-ly.firebasestorage.app",
+            messagingSenderId: "948062882674",
+            appId: "1:948062882674:web:45c530c3c31c5c9ac26beb"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        /* شاشة التحميل */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+        #splash-screen img {
+            width: 250px;
+            height: auto;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        .hidden-content { opacity: 0; overflow: hidden; height: 0; }
+        .show-content { opacity: 1; height: auto; transition: opacity 1s ease-in; }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 text-right font-sans">
+
+    <div id="splash-screen">
+        <img src="https://up6.cc/2026/10/176744974471061.png" alt="إيست كوست">
+    </div>
+
+    <div id="main-content" class="hidden-content">
+        <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+        <div class="max-w-md mx-auto mb-24">
+            <div class="text-center py-6">
+                <h1 class="text-2xl font-bold text-orange-600">ورشة إيست كوست</h1>
+                <p class="text-gray-500">تتبع حالة صيانة سيارتك بكل سهولة</p>
+            </div>
+
+            <div id="bookingPageView" class="hidden">
+                <div class="bg-white p-6 rounded-2xl shadow-lg border-t-4 border-orange-500">
+                    <h2 class="text-xl font-bold mb-4 text-gray-800 flex items-center gap-2">
+                        <i class="ph ph-calendar-plus text-orange-500"></i> طلب حجز موعد
+                    </h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-600 mb-1">نوع السيارة</label>
+                            <input id="bookingCarModel" type="text" placeholder="مثلاً: كيا سبورتج" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-600 mb-1">التاريخ المطلوب</label>
+                            <input id="bookingDate" type="date" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-600 mb-1">رقم الهاتف</label>
+                            <input id="bookingPhone" type="text" placeholder="09XXXXXXXX" class="w-full border p-3 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
+                        </div>
+                        <button onclick="submitBooking()" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl font-bold shadow-md transition-all">إرسال الطلب</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="clientCarsView">
+                <div class="relative mb-6">
+                    <input id="searchInput" oninput="filterCars()" placeholder="ابحث برقم السيارة..." 
+                           class="w-full p-3 pr-10 rounded-xl border-2 border-orange-200 focus:border-orange-500 outline-none shadow-sm">
+                    <i class="ph ph-magnifying-glass absolute right-3 top-3.5 text-orange-400 text-xl"></i>
+                </div>
+                <div id="clientCars" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <div class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-3 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+            <button onclick="switchTab('booking')" id="bookingTabBtn" class="flex flex-col items-center text-gray-400 transition-colors">
+                <i class="ph ph-calendar-check text-2xl"></i>
+                <span class="text-xs font-bold">حجز موعد</span>
+            </button>
+            <button onclick="switchTab('cars')" id="carsTabBtn" class="flex flex-col items-center text-orange-600 transition-colors">
+                <i class="ph ph-car-profile text-2xl"></i>
+                <span class="text-xs font-bold">التتبع</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // إخفاء شاشة التحميل بعد 3 ثوانٍ
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const splash = document.getElementById('splash-screen');
+                const main = document.getElementById('main-content');
+                
+                splash.style.opacity = '0';
+                splash.style.visibility = 'hidden';
+                
+                main.classList.remove('hidden-content');
+                main.classList.add('show-content');
+                
+                loadCars();
+            }, 3000);
+        });
+
+        function switchTab(tab) {
+            document.getElementById("clientCarsView").classList.toggle("hidden", tab !== "cars");
+            document.getElementById("bookingPageView").classList.toggle("hidden", tab !== "booking");
+            document.getElementById("carsTabBtn").className = tab === "cars" ? "flex flex-col items-center text-orange-600" : "flex flex-col items-center text-gray-400";
+            document.getElementById("bookingTabBtn").className = tab === "booking" ? "flex flex-col items-center text-orange-600" : "flex flex-col items-center text-gray-400";
+        }
+
+        function loadCars() {
+            db.ref("cars").on("value", snapshot => {
+                const data = snapshot.val();
+                const list = document.getElementById("clientCars");
+                list.innerHTML = "";
+                if (data) {
+                    for (let key in data) {
+                        const car = data[key];
+                        const card = document.createElement("div");
+                        card.className = "bg-white p-4 rounded-xl shadow-sm border border-gray-100 car-card";
+                        card.setAttribute("data-number", car.number);
+                        card.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-orange-100 p-2 rounded-lg text-orange-600">
+                                        <i class="ph ph-hash-straight text-xl font-bold"></i>
+                                    </div>
+                                    <span class="text-lg font-bold text-gray-700">${car.number}</span>
+                                </div>
+                                <button onclick="unlockCar('${key}', '${car.passwordCar}')" id="btn-${key}" 
+                                        class="bg-orange-50 text-orange-600 px-4 py-2 rounded-lg text-sm font-bold border border-orange-200">
+                                    عرض التفاصيل
+                                </button>
+                            </div>
+                            <div id="details-${key}" class="hidden mt-4 pt-4 border-t border-dashed border-gray-200 space-y-2">
+                                <p class="flex justify-between text-sm"><span class="text-gray-500">نوع السيارة:</span> <span class="font-bold">${car.model}</span></p>
+                                <p class="flex justify-between text-sm"><span class="text-gray-500">تاريخ الاستلام:</span> <span class="font-bold">${car.date}</span></p>
+                                <div class="mt-3 p-2 rounded text-center font-bold ${car.status === 'جاهزة' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                                    الحالة: ${car.status}
+                                </div>
+                            </div>
+                        `;
+                        list.appendChild(card);
+                    }
+                }
+            });
+        }
+
+        function unlockCar(key, correctPass) {
+            const userPass = prompt("الرجاء إدخال كلمة سر السيارة المكونة من 4 أرقام:");
+            if (userPass === correctPass) {
+                document.getElementById(`details-${key}`).classList.remove("hidden");
+                document.getElementById(`btn-${key}`).classList.add("hidden");
+            } else if (userPass !== null) {
+                alert("كلمة السر خاطئة!");
+            }
+        }
+
+        function filterCars() {
+            const val = document.getElementById("searchInput").value.toLowerCase();
+            const cards = document.querySelectorAll(".car-card");
+            cards.forEach(card => {
+                const number = card.getAttribute("data-number").toLowerCase();
+                card.style.display = number.includes(val) ? "block" : "none";
+            });
+        }
+
+        function submitBooking() {
+            const model = document.getElementById("bookingCarModel").value;
+            const date = document.getElementById("bookingDate").value;
+            const phone = document.getElementById("bookingPhone").value;
+            if (!model || !date || !phone) return alert("يرجى تعبئة كافة البيانات");
+            
+            db.ref("حجوزات").push({ carModel: model, date, phone, status: "قيد المراجعة" }).then(() => {
+                alert("تم إرسال طلب الحجز بنجاح");
+                document.getElementById("bookingCarModel").value = "";
+                document.getElementById("bookingDate").value = "";
+                document.getElementById("bookingPhone").value = "";
+            });
+        }
+    </script>
+</body>
+</html>
